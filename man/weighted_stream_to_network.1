@@ -1,0 +1,68 @@
+.TH weighted_stream_to_network 1 "June 20, 2011" "version 1.0" "LPmade User Commands"
+.SH NAME
+weighted_stream_to_network \- convert a stream of weighted data event records into a network in LPmade format
+.SH SYNOPSIS
+.B weighted_stream_to_network
+[OPTIONS] ...
+separator
+v1_index
+v2_index
+w_index
+.SH DESCRIPTION
+Given a stream of edges or events and the separator and index of the source and target, generate a properly formatted network file. There are no restrictions on the order in which events in terms of vertex identifiers. Longitudinal data should be correctly ordered from oldest to newest events. Currently, only numeric vertex identifiers are supported, but these identifiers need not be consecutive. This program is very flexible and can also be used to convert various edge list formats to the LPmade network file format. If edge weights need not consider weighting information associated with each event, see stream_to_network(1).
+.SH OPTIONS
+.TP
+.B \-h
+display usage information
+.TP
+.B \-i
+ignore self-edges
+.SH RETURN VALUE
+Returns 0 on successful execution (not necessarily successful completion) or 1 if argument specification is incorrect or the requested predictor is not included in predict.
+.SH EXAMPLE
+.PP
+< mydata.txt weighted_stream_to_network -i ' ' 4 6 > mynet.net
+.PP
+< mydata.txt.gz gunzip | stream_to_network , 2 3 > mynet.net
+.PP
+Input:
+.RS
+18 3 2
+7 4 0.3
+0 7 11.4
+3 18 9
+0 5 1.3
+0 5 2
+0 2 2.7
+285 47 1
+47 2 5
+.RE
+.PP
+Output:
+.RS
+*Vertices 9
+0 0
+1 2
+2 3
+3 4
+4 5
+5 7
+6 18
+7 47
+8 285
+*Edges 8
+0 1 2.7
+0 4 3.3
+0 5 11.4
+2 6 9
+5 3 0.3
+6 2 2
+7 1 5
+8 7 1
+.RE
+.SH COPYRIGHT
+.PP
+Copyright (C) 2011 Ryan N. Lichtenwalter
+.PP
+LPmade is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. LPmade is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with LPmade. If not, see <http://www.gnu.org/licenses/>.
+

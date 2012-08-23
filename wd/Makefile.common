@@ -1,0 +1,510 @@
+# ------------------------------------------------
+# Copyright (C) 2010 by Ryan N. Lichtenwalter
+# Email: rlichtenwalter@gmail.com
+# 
+# This file is part of LPmade.
+# LPmade is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. LPmade is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with LPmade. If not, see <http://www.gnu.org/licenses/>.
+# ------------------------------------------------
+
+#####
+# The NEIGHBORHOODS variable controls the geodesic distances at which LPmade performs analysis and predictions. Targets affected by this variable include "sm", "classify", "imbalance", and "plots". In the "sm" and "classify" subdirectories, results will be placed in n$(NEIGHBORHOODS) folders (e.g. n2). Setting the variable to 0 will perform predictions across all neighborhoods placing results in files in n0.
+#####
+NEIGHBORHOODS := 2
+
+#####
+# The PREDICTORS variable controls which link prediction methods from the link prediction library are used. Targets affected by this variable include "sm", "classify", and "plots". Currently, the specification of predictors and arguments has strict requirements. Consider the IDegree predictor, the degree of the source node in the prediction. This degree may either be considered in terms of in-edges or out-edges. To predict both, IDegree should be specified as IDegree_D. In directed networks, this will perform predictions IDegree_O and IDegree_I, using both in-edges and out-edges for predictions. In undirected networks, it will only perform one set of predictions since there is no concept of in-edges and out-edges. To perform predictions with only one set of edges in directed networks, you must explicitly remove IDegree_D from the top variable assignment and add IDegree_I or IDegree_O in the directed network conditional block. An example is shown in comments below with PropFlow. All predictor arguments must come after the specification of directionality (D/I/O) and all arguments must be separated form each other and form the predictor name by an underscore (_). The final block is for the addition of predictors that do not accept directionality. Currently this includes only PreferentialAttachment, which is explicitly set to use out-edges of source and in-edges of target in directed networks (degenerating to total degree of both nodes in undirected networks).
+#####
+PREDICTORS := IDegree_D JDegree_D IVolume_D JVolume_D CommonNeighbor_D JaccardCoefficient_D AdamicAdar_D PropFlow_D_5 IPageRank_D_0.85 JPageRank_D_0.85 RootedPageRank_D_0.15
+PREDICTORS := $(PREDICTORS)
+ifeq ($(DIRECTED),1)
+	PREDICTORS := $(shell echo $(PREDICTORS) | sed 's/_D$$/_I/; s/_D /_I /g; s/_D_/_I_/g') $(shell echo $(PREDICTORS) | sed 's/_D$$/_O/; s/_D /_O /g; s/_D_/_O_/g')
+#	PREDICTORS := $(PREDICTORS) PropFlow_O_5
+else
+	PREDICTORS := $(shell echo $(PREDICTORS) | sed 's/_D$$//; s/_D / /g; s/_D_/_/g')
+#	PREDICTORS := $(PREDICTORS) PropFlow_5
+endif
+PREDICTORS := $(PREDICTORS) PreferentialAttachment
+
+#####
+# The features variable and assignments work the same was as the PREDICTORS variable and assignments described above. This variable affects only the "classify" target. The variable specifies that features that should be used in supervised classification of links.
+#####
+FEATURES := IDegree_D JDegree_D IVolume_D JVolume_D CommonNeighbor_D JaccardCoefficient_D AdamicAdar_D PropFlow_D_5 IPageRank_D_0.85 JPageRank_D_0.85 RootedPageRank_D_0.15
+ifeq ($(DIRECTED),1)
+	FEATURES := $(shell echo $(FEATURES) | sed 's/_D$$/_I/; s/_D /_I /g; s/_D_/_I_/g') $(shell echo $(FEATURES) | sed 's/_D$$/_O/; s/_D /_O /g; s/_D_/_O_/g')
+else
+	FEATURES := $(shell echo $(FEATURES) | sed 's/_D$$//; s/_D / /g; s/_D_/_/g')
+endif
+FEATURES := $(FEATURES) PreferentialAttachment
+
+#####
+# This variable allows for link prediction using vertex collocation profile (VCP) computations. Select one or more of VCP3Undirected, VCP3Directed, VCP4Undirected, VCP4Directed.
+#####
+VCP := VCP3Undirected VCP4Undirected
+
+#####
+# This variable specifies the number of bags that should be used in constructing the supervised classifier. It only affects the "classify" target. Larger numbers lead to increasingly better performance but at higher computational cost and with decreasing gains. In line with the KDD paper "New Perspectives and Methods in Link Prediction" (Lichtenwalter 2010), we use 10 bags.
+#####
+NUM_BAGS := 10
+
+#####
+# This variable only affects the "classify" target. Link prediction is inherently a very imbalanced domain with few possible links actually forming. In supervised classification, training sets are much more manageable when the high proportion of negative instances is decreased to allow for faster computation and increased focus on the class boundary region.
+#####
+PERCENT_POSITIVE := 25
+
+#####
+# This variable specifies the evaluation metrics to run on prediction outputs and, in some cases, the metrics for which to generate plots. It affects the "sm", "classify", "vcp", and "plots" target. Possible metrics are listed below:
+# roc auroc pr aupr ef tnp
+#####
+EVALUATION_METRICS := roc auroc aupr
+
+#####
+# This specifies the maximum memory available to "sort". Increasing values may increase sorting speed. Sort will never exceed this amount of memory consumption instead dumping intermediate results to temporary files.
+#####
+SORT_MEMORY_MAX := 1G
+
+#####
+# This specifies the maximum memory available to the Java virtual machine when running WEKA. For very large data sets, tens of gigabytes may be required. WEKA will fail if it requires more memory than allowed, so it is safe to set this to physical memory divided by the number of tasks to speculatively run simultaneously in hopes that the memory is sufficient. The fastest way to discover the memory requirements of classification is to first set this to the maximum memory of your machine and to observe the maximum working set size of the WEKA classification process.
+#####
+WEKA_MEMORY_MAX := 1G
+
+#####
+# This target copies, downloads, or constructs source data depending on task-specific user specifications. If there is no specification for src, then there must be a subdirectory src in the task-specific directory that has the necessary source files.
+#####
+src: $(addprefix ./src/,$(SRC))
+
+#####
+# This makes the stream directory and places LPmade generic stream files in that directory based on the source data and PERIOD specifications inside the task-specific Makefile.
+#####
+stream: $(addsuffix .txt.gz,$(addprefix ./stream/,$(PERIODS)))
+
+#####
+# This makes all possible networks, FEATURE, LABEL, UNSUPERVISED, TEST, and COMPLETE, based on the stream target output and the period settings inside the task-specific Makefile.
+#####
+net: $(addsuffix .net,$(addprefix ./net/,FEATURE LABEL UNSUPERVISED TEST COMPLETE))
+
+#####
+# This is the target to compute single-metric unsupervised methods of link prediction. The methods computed are determined by the PREDICTORS variable above. Predictions occur within the NEIGHBORHOODS variable above.
+#####
+sm: $(foreach m,$(EVALUATION_METRICS),$(addsuffix .$(m),$(addprefix ./sm/n,$(foreach n,$(NEIGHBORHOODS),$(addprefix $(n)/,$(foreach p,$(PREDICTORS),$(p)))))))
+
+#####
+# This is the target to compute supervised classification using bagging and undersampling parameters as specified in the variables above. The WEKA machine learning toolkit is used for its bagging and random forest classification algorithms, but power users may modify the classification rules to use whatever WEKA classifier they like.
+#####
+classify: $(foreach m,$(EVALUATION_METRICS),$(addsuffix .$(m),$(addprefix ./classify/n,$(foreach n,$(NEIGHBORHOODS),$(addprefix $(n)/,result)))))
+
+#####
+# This target goes beyond simply outputting numbers describing results to instead using the included gnuplot distribution to provide comparative plots of predictor performance. It also provides analytical plots using binning to determine the efficacy of various predictors within their individual score output regions.
+#####
+plots: $(addprefix ./plots/n,$(foreach n,$(NEIGHBORHOODS),$(n)_roc.eps)) $(addprefix ./plots/n,$(foreach n,$(NEIGHBORHOODS),$(n)_pr.eps)) $(addprefix ./plots/,$(foreach p,$(PREDICTORS),$(p)_ef.eps))
+
+#####
+# This target computes network statistics on the COMPLETE network as specified in the task-specific Makefile.
+#####
+stats: $(addprefix ./stats/,average_clustering_coefficient.txt free_choice_mutuality.txt scc_stats.txt out_degree_stats.txt pageranks.txt assortativity_coefficient.txt)
+
+#####
+# This target computes SCC information about network data with increasing edge thresholds and places it in a file in the threshold directory, which the target creates. Currently, the target is set to threshold edges from 1 to 15 where the number is the minimum weight required to maintain the edge in the thresholded network.
+#####
+threshold: $(addprefix ./threshold/,$(foreach t,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15,$(t)_scc_stats.txt))
+
+#####
+# This target produces growth plots based on the PERIODS variables specified in the task-specific Makefile. These plots show the trend in various network characteristics with increasing observation time.
+#####
+growth: $(addprefix ./growth/,growth.eps)
+
+#####
+# This target shows the imbalance properties of the link prediction task across the neighborhoods specified in the NEIGHBORHOODS variable above.
+#####
+imbalance: $(addprefix ./imbalance/,imbalance.eps)
+
+#####
+# This target allows for link prediction using vertex collocation profile (VCP) computations.
+#####
+vcp: $(foreach m,$(EVALUATION_METRICS),$(foreach vcp,$(VCP),./$(vcp)/n2/result.$(m)))
+
+#####
+# This target is mostly for demonstration purposes. It will create a folder "params" into which it will place the result of a parameter search over the alpha parameter in the RootedPageRank and WeightedRootedPageRank predictors. This parameter search will be visible to the user in the form of plots produced by gnuplot on the computed data. This demonstration parameter search may be extended by users for parameter searches of other methods by examining the params target directly below as well as the upstream targets farther down in this Makefile.
+#####
+params: $(addprefix ./params/RootedPageRank/,RootedPageRank.eps) $(addprefix ./params/WeightedRootedPageRank/,WeightedRootedPageRank.eps)
+
+#####
+# The following text contains the core of the architectural automation. It should not be adjusted unless you know exactly what your goal is and how to accomplish it.
+#####
+
+BAGS := $(shell echo {1..$(NUM_BAGS)})
+
+STREAM_TO_NETWORK := stream_to_network -i "," 2 3
+ifeq ($(WEIGHTED_STREAM),1)
+	STREAM_TO_NETWORK := weighted_stream_to_network -i "," 2 3 4
+endif
+
+./params/RootedPageRank/RootedPageRank.gpi: ./params/RootedPageRank/RootedPageRank.dat
+	echo 'set datafile separator " "' > $@.tmp;
+	echo 'set term postscript eps enhanced color size 4in,4in blacktext "Helvetica" 18' >> $@.tmp;
+	echo 'set title noenhanced "Rooted PageRank"' >> $@.tmp;
+	echo 'set key on inside top right vertical' >> $@.tmp;
+	echo 'set xlabel "{/Symbol a}"' >> $@.tmp;
+	echo 'set xrange [0:1]' >> $@.tmp;
+	echo 'set xtics 0.1' >> $@.tmp;
+	echo 'set ylabel "AUC Performance"' >> $@.tmp;
+	echo 'set yrange [:1]' >> $@.tmp;
+	echo 'set ytics 0.1' >> $@.tmp;
+	echo 'plot "$<" using 1:2 notitle with linespoints' >> $@.tmp;
+	mv $@.tmp $@;
+	
+./params/WeightedRootedPageRank/WeightedRootedPageRank.gpi: ./params/WeightedRootedPageRank/WeightedRootedPageRank.dat
+	echo 'set datafile separator " "' > $@.tmp;
+	echo 'set term postscript eps enhanced color size 4in,4in blacktext "Helvetica" 18' >> $@.tmp;
+	echo 'set title noenhanced "Weighted Rooted PageRank"' >> $@.tmp;
+	echo 'set key on inside top right vertical' >> $@.tmp;
+	echo 'set xlabel "{/Symbol a}"' >> $@.tmp;
+	echo 'set xrange [0:1]' >> $@.tmp;
+	echo 'set xtics 0.1' >> $@.tmp;
+	echo 'set ylabel "AUC Performance"' >> $@.tmp;
+	echo 'set yrange [:1]' >> $@.tmp;
+	echo 'set ytics 0.1' >> $@.tmp;
+	echo 'plot "$<" using 1:2 notitle with linespoints' >> $@.tmp;
+	mv $@.tmp $@;
+	
+./params/WeightedRootedPageRank/WeightedRootedPageRank.dat: $(addprefix ./params/WeightedRootedPageRank/,$(foreach p,0.05 0.10 0.15 0.20 0.25 0.30 0.35 0.40 0.45 0.50 0.55 0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95,$(p).auroc))
+	rm -f $@;
+	$(foreach p,$^,/bin/echo -n "$(basename $(notdir $(p))) " >> $@; cat $(p) >> $@;)
+
+./params/WeightedRootedPageRank/%.prob.gz: ./net/UNSUPERVISED.net ./net/TEST.net
+	mkdir -p $(@D);
+	$(BIN)/predict -n 3 -f ./net/UNSUPERVISED.net WeightedRootedPageRank O | $(BIN)/label_predictions ./net/TEST.net | gzip > $@.tmp && \
+	if [ $${PIPESTATUS[0]} -eq 0 -a $${PIPESTATUS[1]} -eq 0 -a $${PIPESTATUS[2]} -eq 0 ]; then mv $@.tmp $@; else exit 1; fi;
+
+./params/RootedPageRank/RootedPageRank.dat: $(addprefix ./params/RootedPageRank/,$(foreach p,0.05 0.10 0.15 0.20 0.25 0.30 0.35 0.40 0.45 0.50 0.55 0.60 0.65 0.70 0.75 0.80 0.85 0.90 0.95,$(p).auroc))
+	rm -f $@;
+	$(foreach p,$^,/bin/echo -n "$(basename $(notdir $(p))) " >> $@; cat $(p) >> $@;)
+
+./params/RootedPageRank/%.prob.gz: ./net/UNSUPERVISED.net ./net/TEST.net
+	mkdir -p $(@D);
+	$(BIN)/predict -n 3 -f ./net/UNSUPERVISED.net RootedPageRank O | $(BIN)/label_predictions ./net/TEST.net | gzip > $@.tmp && \
+	if [ $${PIPESTATUS[0]} -eq 0 -a $${PIPESTATUS[1]} -eq 0 -a $${PIPESTATUS[2]} -eq 0 ]; then mv $@.tmp $@; else exit 1; fi;
+
+./net/%.net: $(addsuffix .txt.gz,$(addprefix ./stream/,$(PERIODS)))
+	mkdir -p $(@D);
+	gunzip --stdout $(addsuffix .txt.gz,$(addprefix ./stream/,$($(basename $(@F))))) | $(BIN)/$(STREAM_TO_NETWORK) > $@.tmp;
+	mv $@.tmp $@;
+
+./sm/%.prob.gz: ./net/UNSUPERVISED.net ./net/TEST.net
+	mkdir -p $(@D);
+	$(BIN)/predict -n $(subst sm/n,,$(@D)) -f ./net/UNSUPERVISED.net $(shell echo $(basename $(basename $(@F))) | grep -o '_\(I\|O\)\(_.*\|$$\)' | sed 's/^_\(I\).*/-d \1 /; s/^_\(O\).*/-d \1 /')$(shell echo $(basename $(basename $(@F))) | sed 's/_I_/_/; s/_O_/_/; s/_I$$//; s/_O$$//; s/_/ /g') | $(BIN)/label_predictions ./net/TEST.net | gzip > $@.tmp && \
+	if [ $${PIPESTATUS[0]} -eq 0 -a $${PIPESTATUS[1]} -eq 0 -a $${PIPESTATUS[2]} -eq 0 ]; then mv $@.tmp $@; else exit 1; fi;
+
+./classify/n%/train.names: $(addprefix ./classify/features/n%/,$(foreach f,$(FEATURES),$(f).prob.gz))
+	mkdir -p $(@D);
+	echo '0,1' > $@.tmp;
+	echo -e -n '$(subst \n ,\n,$(foreach f,$(FEATURES),$(f): continuous\n))' >> $@.tmp;
+	mv $@.tmp $@;
+
+./classify/n%/test.names: ./classify/n%/train.names
+	cp $< $@;
+
+./classify/features/%.prob.gz: ./net/FEATURE.net ./net/LABEL.net
+	mkdir -p $(@D);
+	$(BIN)/predict -n $(subst classify/features/n,,$(@D)) -f ./net/FEATURE.net $(shell echo $(basename $(basename $(@F))) | grep -o '_\(I\|O\)\(_.*\|$$\)' | sed 's/^_\(I\).*/-d \1 /; s/^_\(O\).*/-d \1 /')$(shell echo $(basename $(basename $(@F))) | sed 's/_I_/_/; s/_O_/_/; s/_I$$//; s/_O$$//; s/_/ /g') | $(BIN)/label_predictions ./net/LABEL.net | gzip > $@.tmp && \
+	if [ $${PIPESTATUS[0]} -eq 0 -a $${PIPESTATUS[1]} -eq 0 -a $${PIPESTATUS[2]} -eq 0 ]; then mv $@.tmp $@; else exit 1; fi;
+
+./classify/n%/train.data.gz: $(addprefix ./classify/features/n%/,$(foreach f,$(FEATURES),$(f).prob.gz))
+	mkdir -p $(@D);
+	pr -t -s',' -m $(foreach f,$^,<(< $(f) gunzip | cut -d ' ' -f 1)) <(< $< gunzip | cut -d ' ' -f 2) | gzip > $@.tmp;
+	mv $@.tmp $@;
+	
+./classify/n%/test.data.gz: $(addprefix ./sm/n%/,$(foreach f,$(FEATURES),$(f).prob.gz))
+	mkdir -p $(@D);
+	pr -t -s',' -m $(foreach f,$^,<(< $(f) gunzip | cut -d ' ' -f 1)) <(< $< gunzip | cut -d ' ' -f 2) | gzip > $@.tmp;
+	mv $@.tmp $@;
+	
+define DISTANCE_TEMPLATE
+./VCP%/n$(1)/train.data.gz: ./net/FEATURE.net ./net/LABEL.net
+	mkdir -p $$(@D);
+	pr -t -s',' -m <(($$(BIN)/predict -n $(1) -f ./net/FEATURE.net $$(shell basename $$$$(dirname $$(@D))) 3>&1 1>&2- 2>&3-) 2> /dev/null | cut -d ' ' -f3- | tr ' ' ',') <($$(BIN)/predict -n $(1) -f ./net/FEATURE.net One | $$(BIN)/label_predictions ./net/LABEL.net | cut -d ' ' -f 2) | gzip > $$@.tmp && \
+	if [ $$$${PIPESTATUS[0]} -eq 0 -a $$$${PIPESTATUS[1]} -eq 0 ]; then mv $$@.tmp $$@; else exit 1; fi;
+
+./VCP%/n$(1)/train.names: ./VCP%/n$(1)/train.data.gz
+	< $$< gunzip | head -n 1 | awk -F ',' 'BEGIN {print "0,1";} {for(i=0;i<NF-1;i++){print "f"i": continuous";}}' > $$@.tmp;
+	mv $$@.tmp $$@;
+
+./VCP%/n$(1)/test.data.gz: ./net/UNSUPERVISED.net ./net/TEST.net
+	mkdir -p $$(@D);
+	pr -t -s',' -m <(($$(BIN)/predict -n $(1) -f ./net/UNSUPERVISED.net $$(shell basename $$$$(dirname $$(@D))) 3>&1 1>&2- 2>&3-) 2> /dev/null | cut -d ' ' -f3- | tr ' ' ',') <($$(BIN)/predict -n $(1) -f ./net/UNSUPERVISED.net One | $$(BIN)/label_predictions ./net/TEST.net | cut -d ' ' -f 2) | gzip > $$@.tmp && \
+	if [ $$$${PIPESTATUS[0]} -eq 0 -a $$$${PIPESTATUS[1]} -eq 0 ]; then mv $$@.tmp $$@; else exit 1; fi;
+	
+./VCP%/n$(1)/test.names: ./VCP%/n$(1)/test.data.gz
+	< $$< gunzip | head -n 1 | awk -F ',' 'BEGIN {print "0,1";} {for(i=0;i<NF-1;i++){print "f"i": continuous";}}' > $$@.tmp;
+	mv $$@.tmp $$@;
+
+endef
+$(foreach distance,$(NEIGHBORHOODS),$(eval $(call DISTANCE_TEMPLATE,$(distance))))
+
+define WEKA_TEMPLATE
+%/result_$(1).names: %/train.names
+	mkdir -p $$(@D);
+	cp $$< $$@;
+
+%/result_$(1).data.gz: %/train.data.gz
+	all=$$$$(< $$< gunzip | wc -l) && \
+	pos=$$$$(< $$< gunzip | grep -c "1$$$$") && \
+	neg=$$$$(($$$$all-$$$$pos)) && \
+	count=`awk 'BEGIN {print '$$$$pos'/($$(PERCENT_POSITIVE)/100)-'$$$$pos'}'` && \
+	percent=`awk 'BEGIN {print '$$$$count'/'$$$$neg'}'` && \
+	< $$< gunzip | awk 'BEGIN{srand($(1));} {if( $$$$0 ~ /1$$$$/ || ($$$$0 ~ /0$$$$/ && rand() < '$$$$percent') ) {print;}}' | gzip > $$@.tmp && \
+	if [ $$$${PIPESTATUS[0]} -eq 0 -a $$$${PIPESTATUS[1]} -eq 0 -a $$$${PIPESTATUS[2]} -eq 0 ]; then mv $$@.tmp $$@; else exit 1; fi;
+
+%/result_$(1).model: %/result_$(1).names %/result_$(1).data.gz
+	mkdir -p $$(@D);
+	$(JAVA) -Xmx$(WEKA_MEMORY_MAX) -cp $(WEKA) weka.classifiers.trees.RandomForest \
+			-d $$@.tmp \
+			-t $$(@D)/result_$(1).names \
+			-I 10 -K 0 -S $(1);
+	mv $$@.tmp $$@;
+
+%/result_$(1).prob.gz: %/result_$(1).model %/test.names %/test.data.gz
+	mkdir -p $$(@D);
+	$(JAVA) -Xmx$(WEKA_MEMORY_MAX) -cp $(WEKA) weka.classifiers.trees.RandomForest \
+			-l $$(@D)/result_$(1).model \
+			-T $$(@D)/test.names \
+			-p 0 -distribution \
+			| gzip > $$@.tmp && \
+	if [ $$$${PIPESTATUS[0]} -eq 0 -a $$$${PIPESTATUS[1]} -eq 0 ]; then mv $$@.tmp $$@; else exit 1; fi;
+
+endef
+$(foreach bag,$(BAGS),$(eval $(call WEKA_TEMPLATE,$(bag))))
+
+%/result.prob.gz: $(foreach bag,$(BAGS),%/result_$(bag).prob.gz)
+	mkdir -p $(@D);
+	pr -t -s' ' -m $(foreach bag,$(BAGS),<(< $(@D)/result_$(bag).prob.gz gunzip | cut -d ' ' -f 1) ) <(< $(@D)/result_1.prob.gz gunzip | cut -d ' ' -f 2) | awk -F ' ' '{sum=0; for(i=1;i<=$(NUM_BAGS);i++){sum+=$$i} print sum/$(NUM_BAGS)" "$$NF;}' | gzip > $@.tmp && \
+	if [ $${PIPESTATUS[0]} -eq 0 -a $${PIPESTATUS[1]} -eq 0 ]; then mv $@.tmp $@; else exit 1; fi;
+
+%.sprob.gz: %.prob.gz
+	< $< gunzip | sort -S $(SORT_MEMORY_MAX) -T $(TEMP) -k1gr | gzip > $@.tmp && \
+	if [ $${PIPESTATUS[0]} -eq 0 -a $${PIPESTATUS[1]} -eq 0 -a $${PIPESTATUS[2]} -eq 0 ]; then mv $@.tmp $@; else exit 1; fi;
+
+%.roc: %.sprob.gz
+	all=`< $< gunzip | wc -l` && \
+	pos=`< $< gunzip | grep -c "1$$"` && \
+	neg=`echo "$$all-$$pos" | bc` && \
+	< $< gunzip | $(METRICS)/roc $$neg $$pos | sed 's/\(.\...\)..../\1/g' | uniq > $@.tmp && \
+	if [ $${PIPESTATUS[0]} -eq 0 -a $${PIPESTATUS[1]} -eq 0 -a $${PIPESTATUS[2]} -eq 0 -a $${PIPESTATUS[3]} -eq 0 ]; then mv $@.tmp $@; else exit 1; fi;
+
+%.pr: %.sprob.gz
+	pos=`< $< gunzip | grep -c "1$$"` && \
+	< $< gunzip | $(METRICS)/pr 1 $$pos | sed 's/\(.\...\)......./\1/g' | uniq > $@.tmp && \
+	if [ $${PIPESTATUS[0]} -eq 0 -a $${PIPESTATUS[1]} -eq 0 -a $${PIPESTATUS[2]} -eq 0 -a $${PIPESTATUS[3]} -eq 0 ]; then mv $@.tmp $@; else exit 1; fi;
+
+%.auroc: %.sprob.gz
+	< $< gunzip | $(METRICS)/$(subst .,,$(suffix $(@F))) > $@.tmp && \
+	if [ $${PIPESTATUS[0]} -eq 0 -a $${PIPESTATUS[1]} -eq 0 ]; then mv $@.tmp $@; else exit 1; fi;
+
+%.aupr: %.sprob.gz
+	pos=$$(< $< gunzip | grep -c '1$$') && \
+	< $< gunzip | $(METRICS)/$(subst .,,$(suffix $(@F))) 0.001 $$pos > $@.tmp && \
+	if [ $${PIPESTATUS[0]} -eq 0 -a $${PIPESTATUS[1]} -eq 0 ]; then mv $@.tmp $@; else exit 1; fi;
+
+%.tnp: %.sprob.gz
+	all=`< $< gunzip | wc -l` && \
+	< $< gunzip | $(METRICS)/topnprec $$all > $@.tmp && \
+	if [ $${PIPESTATUS[0]} -eq 0 -a $${PIPESTATUS[1]} -eq 0 ]; then mv $@.tmp $@; else exit 1; fi;
+	
+%.ef: %.sprob.gz
+	all=`< $< gunzip | wc -l` && \
+	< $< gunzip | $(METRICS)/$(subst .,,$(suffix $(@F))) 10 $$all > $@.tmp && \
+	if [ $${PIPESTATUS[0]} -eq 0 -a $${PIPESTATUS[1]} -eq 0 ]; then mv $@.tmp $@; else exit 1; fi;
+
+./plots/%_roc.gpi: $(addprefix ./sm/%/,$(foreach p,$(PREDICTORS),$(p).roc))
+	mkdir -p plots;
+	echo 'set datafile separator " "' > $@.tmp;
+	echo 'set term postscript eps enhanced color size 4in,4in blacktext "Helvetica" 18' >> $@.tmp;
+	echo 'set title noenhanced "$(notdir $(CURDIR)) $(subst _roc,,$(basename $(@F)))"' >> $@.tmp;
+	echo 'set key on inside bottom right vertical' >> $@.tmp;
+	echo 'set xlabel "False Positive Rate"' >> $@.tmp;
+	echo 'set xrange [0:1]' >> $@.tmp;
+	echo 'set xtics 0.1' >> $@.tmp;
+	echo 'set ylabel "True Positive Rate"' >> $@.tmp;
+	echo 'set yrange [0:1]' >> $@.tmp;
+	echo 'set ytics 0.1' >> $@.tmp;
+	echo 'plot x notitle with lines lt 2 linecolor 0 $(foreach p,$(PREDICTORS),,"sm/$(subst _roc,,$(basename $(@F)))/$(p).roc" using 1:2 title "$(subst _, ,$(p))" with linespoints)' >> $@.tmp;
+	mv $@.tmp $@;
+	
+./plots/%_pr.gpi: $(addprefix ./sm/%/,$(foreach p,$(PREDICTORS),$(p).pr))
+	mkdir -p plots;
+	echo 'set datafile separator " "' > $@.tmp;
+	echo 'set term postscript eps enhanced color size 4in,4in blacktext "Helvetica" 18' >> $@.tmp;
+	echo 'set title noenhanced "$(notdir $(CURDIR)) $(subst _roc,,$(basename $(@F)))"' >> $@.tmp;
+	echo 'set key on inside bottom right vertical' >> $@.tmp;
+	echo 'set xlabel "False Positive Rate"' >> $@.tmp;
+	echo 'set xrange [0:1]' >> $@.tmp;
+	echo 'set xtics 0.1' >> $@.tmp;
+	echo 'set ylabel "True Positive Rate"' >> $@.tmp;
+	echo 'set yrange [0:1]' >> $@.tmp;
+	echo 'set ytics 0.1' >> $@.tmp;
+	echo 'plot x notitle with lines lt 2 linecolor 0 $(foreach p,$(PREDICTORS),,"sm/$(subst _pr,,$(basename $(@F)))/$(p).pr" using 1:2 title "$(subst _, ,$(p))" with linespoints)' >> $@.tmp;
+	mv $@.tmp $@;
+
+./plots/%_tnp.gpi: $(addprefix ./sm/%/,$(foreach p,$(PREDICTORS),$(p).tnp))
+	mkdir -p plots;
+	echo 'set datafile separator " "' > $@.tmp;
+	echo 'set term postscript eps enhanced color size 4in,4in blacktext "Helvetica" 18' >> $@.tmp;
+	echo 'set title noenhanced "$(notdir $(CURDIR)) $(subst _tnp,,$(basename $(@F)))"' >> $@.tmp;
+	echo 'set key on inside bottom right vertical' >> $@.tmp;
+	echo 'set xlabel "Top-X Proportion"' >> $@.tmp;
+	echo 'set xrange [0:0.2]' >> $@.tmp;
+	echo 'set xtics 0.1' >> $@.tmp;
+	echo 'set yrange [0:]' >> $@.tmp;
+	echo 'set ylabel "Precision"' >> $@.tmp;
+	echo 'plot x notitle with lines lt 2 linecolor 0 $(foreach p,$(PREDICTORS),,"sm/$(subst _tnp,,$(basename $(@F)))/$(p).tnp" using 1:2 title "$(subst _, ,$(p))" with linespoints)' >> $@.tmp;
+	mv $@.tmp $@;
+
+./plots/%_ef.gpi: $(addprefix ./sm/n,$(foreach n,$(NEIGHBORHOODS),$(n)/%.ef))
+	mkdir -p plots;
+	echo 'set datafile separator " "' > $@.tmp;
+	echo 'set term postscript eps enhanced color size 4in,4in blacktext "Helvetica" 18' >> $@.tmp;
+	echo 'set title noenhanced "$(notdir $(CURDIR)) $(subst _ef,,$(basename $(@F)))"' >> $@.tmp;
+	echo 'set key on inside bottom right vertical' >> $@.tmp;
+	echo 'set xlabel "Score"' >> $@.tmp;
+	echo 'set log x' >> $@.tmp;
+	echo 'set ylabel "True Positive Rate"' >> $@.tmp;
+	echo 'set log y' >> $@.tmp;
+	echo 'plot 0 notitle $(foreach n,$(NEIGHBORHOODS),,"sm/n$(n)/$(subst _ef,,$(basename $(@F))).ef" using 1:2 title "$(subst _, ,n=$(n))" with linespoints)' >> $@.tmp;
+	mv $@.tmp $@;
+
+./imbalance/%.counts: ./net/UNSUPERVISED.net ./net/TEST.net
+	mkdir -p imbalance;
+	rm -f $(@D)/pipe$(basename $(@F));
+	mkfifo $(@D)/pipe$(basename $(@F));
+	(wc -l > $(@D)/$(basename $(@F)).all) < $(@D)/pipe$(basename $(@F)) &
+	$(BIN)/predict -n $(basename $(@F)) -f ./net/UNSUPERVISED.net One O | $(BIN)/label_predictions ./net/TEST.net | tee $(@D)/pipe$(basename $(@F)) | grep -c "1$$" | cat > $(@D)/$(basename $(@F)).pos;
+	/bin/echo -n '$(basename $(@F)) ' > $@.tmp;
+	paste -d ' ' $(@D)/$(basename $(@F)).all $(@D)/$(basename $(@F)).pos >> $@.tmp;
+	mv $@.tmp $@;
+	rm -f $(@D)/pipe$(basename $(@F)) $(@D)/$(basename $(@F)).all $(@D)/$(basename $(@F)).pos
+
+./imbalance/imbalance.dat: $(addprefix ./imbalance/,$(foreach n,$(NEIGHBORHOODS),$(n).counts))
+	cat ./imbalance/* | awk -F ' ' '{if( $$3 > 0 ){print $$1" "$$2" "$$3" "$$2-$$3" "($$2-$$3)/$$3;}}' > $@.tmp;
+	mv $@.tmp $@;
+
+./imbalance/imbalance.gpi: ./imbalance/imbalance.dat
+	mkdir -p imbalance;
+	echo 'set datafile separator " "' > $@.tmp;
+	echo 'set term postscript eps enhanced color size 4in,4in blacktext "Helvetica" 18' >> $@.tmp;
+	echo 'set notitle' >> $@.tmp;
+	echo 'set key on inside bottom center vertical' >> $@.tmp;
+	echo 'set xlabel "Geodesic Distance"' >> $@.tmp;
+	echo 'set xtics 1' >> $@.tmp;
+	echo 'set logscale y' >> $@.tmp;
+	echo 'set yrange [1:]' >> $@.tmp;
+	echo 'set format y "10^{%L}"' >> $@.tmp;
+	/bin/echo -n 'plot "$<" using 1:4 title "(-) Count" with linespoints, ' >> $@.tmp;
+	/bin/echo -n '"$<" using 1:3 title "(+) Count" with linespoints, ' >> $@.tmp;
+	echo '"$<" using 1:5 title "Imbalance Ratio" with linespoints' >> $@.tmp;
+	mv $@.tmp $@;
+
+%.eps: %.gpi
+	< $< $(GNUPLOT) > $@.tmp;
+	mv $@.tmp $@;
+
+./stats/average_clustering_coefficient.txt: ./net/COMPLETE.net
+	mkdir -p $(@D);
+	< $< $(BIN)/average_clustering_coefficient > $@.tmp;
+	mv $@.tmp $@;
+
+./stats/free_choice_mutuality.txt: ./net/COMPLETE.net
+	mkdir -p $(@D);
+	< $< $(BIN)/free_choice_mutuality > $@.tmp;
+	mv $@.tmp $@;
+
+./stats/out_degree_distribution.txt: ./net/COMPLETE.net
+	mkdir -p $(@D);
+	< $< $(BIN)/out_degree_distribution > $@.tmp;
+	mv $@.tmp $@;
+
+./stats/scc_distribution.txt: ./net/COMPLETE.net
+	mkdir -p $(@D);
+	< $< $(BIN)/scc_distribution > $@.tmp;
+	mv $@.tmp $@;
+
+./stats/pageranks.txt: ./net/COMPLETE.net
+	mkdir -p $(@D);
+	< $< $(BIN)/pagerank 0.85 > $@.tmp;
+	mv $@.tmp $@;
+
+./stats/assortativity_coefficient.txt: ./net/COMPLETE.net
+	mkdir -p $(@D);
+	< $< $(BIN)/assortativity_coefficient > $@.tmp;
+	mv $@.tmp $@;
+
+%_stats.txt: %_distribution.txt
+	mkdir -p $(@D);
+	< $< sort -g | awk '{sum+=$$0; array[NR]=$$0} END{for(x=1;x<=NR;x++){sumsq+=((array[x]-(sum/NR))^2);} print NR" "array[1]" "(array[int((NR+1)/2)]+array[int((NR+2)/2)])/2" "array[NR]" "sum/NR" "sqrt(sumsq/NR);}' > $@.tmp;
+	mv $@.tmp $@;
+
+./threshold/%_scc_distribution.txt: ./net/COMPLETE.net
+	mkdir -p $(@D);
+	< $< $(BIN)/threshold_edges $(subst _scc_distribution.txt,,$(@F)) | $(BIN)/scc_distribution > $@.tmp;
+	mv $@.tmp $@;
+
+INDEX := 1
+define SPAN_TEMPLATE
+SPAN$(INDEX) := $(SPAN$(shell echo $$(($(INDEX)-1)))) $(1)
+INDEX := $(shell echo $$(($(INDEX)+1)))
+SPANS += SPAN$(INDEX)
+endef
+$(foreach period,$(PERIODS),$(eval $(call SPAN_TEMPLATE,$(period))))
+
+define SPAN_NET_TEMPLATE
+./growth/$(1).net: $(addsuffix .txt.gz,$(addprefix ./stream/,$($(1))))
+	gunzip --stdout $$^ | $(BIN)/stream_to_network "," 2 3 > $$@.tmp && \
+	if [ $$$${PIPESTATUS[0]} -eq 0 -a $$$${PIPESTATUS[1]} -eq 0 ]; then mv $$@.tmp $$@; else exit 1; fi;
+endef
+$(foreach span,$(SPANS),$(eval $(call SPAN_NET_TEMPLATE,$(span))))
+
+define SPAN_STATS_TEMPLATE
+./growth/$(1).stats: ./growth/$(1).net
+	mkdir -p $$(@D);
+	/bin/echo -n $$$$(< $$< $(BIN)/count_vertices)' ' > $$@.tmp;
+	/bin/echo -n $$$$(< $$< $(BIN)/count_edges)' ' >> $$@.tmp;
+	/bin/echo -n $$$$(< $$< $(BIN)/average_clustering_coefficient)' ' >> $$@.tmp;
+	/bin/echo -n $$$$(< $$< $(BIN)/assortativity_coefficient)' ' >> $$@.tmp;
+	/bin/echo -n $$$$(< $$< $(BIN)/scc_distribution | wc -l)' ' >> $$@.tmp;
+	echo $$$$(< $$< $(BIN)/scc_distribution | awk -F ' ' 'BEGIN{MAX=-1} {if($$$$2>MAX){MAX=$$$$2;}} END{print MAX;}') >> $$@.tmp
+	mv $$@.tmp $$@;
+endef
+$(foreach span,$(SPANS),$(eval $(call SPAN_STATS_TEMPLATE,$(span))))
+
+./growth/growth.dat: $(addprefix ./growth/,$(foreach period,$(PERIODS),$(subst PERIOD,SPAN,$(period).stats)))
+	cat $^ | awk -F ' ' '{for(c=1;c<=NF;c++){vector[NR,c]=$$c;}} END{for(r=1;r<=NR;r++){printf "%d",r;for(c=1;c<=NF;c++){printf " %f",vector[r,c]/vector[NR,c];}printf "\n";}}' > $@.tmp && \
+	if [ $${PIPESTATUS[0]} -eq 0 -a $${PIPESTATUS[1]} -eq 0 ]; then mv $@.tmp $@; else exit 1; fi;
+
+./growth/growth.gpi: ./growth/growth.dat
+	echo 'set datafile separator " "' > $@.tmp;
+	echo 'set term postscript eps enhanced color size 4in,4in blacktext "Helvetica" 18' >> $@.tmp;
+	echo 'set title noenhanced "Network Growth Characteristics"' >> $@.tmp;
+	echo 'set key on inside bottom right vertical' >> $@.tmp;
+	echo 'set xlabel "Time (in equal-width periods)"' >> $@.tmp;
+	echo 'set xrange [1:$(shell echo $$(($$(< $< wc -l)-1)))]' >> $@.tmp;
+	echo 'set xtics 1' >> $@.tmp;
+	echo 'set ylabel "Value Relative to Final Value"' >> $@.tmp;
+	echo 'set yrange [0:2]' >> $@.tmp;
+	echo 'set ytics 0.25' >> $@.tmp;
+	/bin/echo -n 'plot "$<" using 1:2 notitle "Vertex Count" with points linecolor 1, ' >> $@.tmp;
+	/bin/echo -n '"$<" using 1:2 title "Vertex Count" smooth csplines with lines linecolor 1, ' >> $@.tmp;
+	/bin/echo -n '"$<" using 1:3 notitle "Edge Count" with points linecolor 2, ' >> $@.tmp;
+	/bin/echo -n '"$<" using 1:3 title "Edge Count" smooth csplines with lines linecolor 2, ' >> $@.tmp;
+	/bin/echo -n '"$<" using 1:4 notitle "Average Clustering Coefficient" with points linecolor 3, ' >> $@.tmp;
+	/bin/echo -n '"$<" using 1:4 title "Average Clustering Coefficient" smooth csplines with lines linecolor 3, ' >> $@.tmp;
+	/bin/echo -n '"$<" using 1:5 notitle "Assortativity Coefficient" with points linecolor 4, ' >> $@.tmp;
+	/bin/echo -n '"$<" using 1:5 title "Assortativity Coefficient" smooth csplines with lines linecolor 4, ' >> $@.tmp;
+	/bin/echo -n '"$<" using 1:6 notitle "Number of SCCs" with points linecolor 5, ' >> $@.tmp;
+	/bin/echo -n '"$<" using 1:6 title "Number of SCCs" smooth csplines with lines linecolor 5, ' >> $@.tmp;
+	/bin/echo -n '"$<" using 1:7 notitle "Size of LSCC" with points linecolor 6, ' >> $@.tmp;
+	echo '"$<" using 1:7 title "Size of LSCC" smooth csplines with lines linecolor 6' >> $@.tmp;
+	mv $@.tmp $@;
+
+.SECONDARY:
+.PHONY: clean src stream net sm classify plots stats threshold growth imbalance params
+
+clean:
+	for i in $(find . -name *.tmp) ; do rm -f $$i; done;

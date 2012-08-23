@@ -1,0 +1,61 @@
+.TH remove_isolates 1 "June 20, 2011" "version 1.0" "LPmade User Commands"
+.SH NAME
+remove_isolates \- output a network with the isolates removed
+.SH SYNOPSIS
+.B remove_isolates
+[OPTIONS] ...
+.SH DESCRIPTION
+Produces a copy of the network with all isolated vertices removed. Any vertex with degree one or higher will remain along with all edges in the original network.
+.SH OPTIONS
+.TP
+.B \-h
+display usage information
+.SH RETURN VALUE
+Returns 0 on successful execution (not necessarily successful completion) or 1 if argument specification is incorrect or the requested predictor is not included in predict.
+.SH EXAMPLE
+.PP
+< mynet.net remove_isolates > no_isolates.net
+.PP
+Input:
+.RS
+*Vertices 9
+0 0
+1 2
+2 3
+3 4
+4 5
+5 7
+6 18
+7 47
+8 285
+*Edges 6
+0 1 1
+0 4 2
+0 5 1
+5 3 1
+7 1 1
+8 7 1
+.RE
+.PP
+Output:
+.RS
+*Vertices 7
+0 0
+1 2
+2 4
+3 5
+4 7
+5 47
+6 285
+*Edges 4
+0 1 1
+0 3 2
+0 4 1
+5 2 1
+.RE
+.SH COPYRIGHT
+.PP
+Copyright (C) 2011 Ryan N. Lichtenwalter
+.PP
+LPmade is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. LPmade is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with LPmade. If not, see <http://www.gnu.org/licenses/>.
+

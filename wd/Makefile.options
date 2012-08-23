@@ -1,0 +1,35 @@
+# ------------------------------------------------
+# Copyright (C) 2010,2011 by Ryan N. Lichtenwalter
+# Email: rlichtenwalter@gmail.com
+# 
+# This file is part of LPmade.
+# LPmade is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. LPmade is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with LPmade. If not, see <http://www.gnu.org/licenses/>.
+# ------------------------------------------------
+
+#####
+# The JAVA variable defines the path to the java binary. The default is to use the java in /usr/bin/java, but this version is not the Oracle/Sun JRE and may not support 64 bit operations. We suggest using the Oracle/Sun JRE.
+#####
+JAVA := /usr/bin/java 
+
+#####
+# This provides the path to the temporary directory that the user wishes to use. The default is /tmp, but this can be changed to accomodate larger temporary directory locations in case this is needed.
+#####
+TEMP := /tmp
+
+#####
+# As of LPmade version 1.1.2, the bash shell in non-POSIX mode is assumed. This relaxation of constraints from pure POSIX was to allow for process substitution in Makefile.common. Process substitution is a much cleaner alternative to named pipes. Additionally, previous versions of LPmade were not purely POSIX compliant anyhow as they used the PIPESTATUS bash variable. This variable should only be changed by users who are very comfortable with shells, scripting, and GNU make.
+#####
+SHELL := /bin/bash
+
+#####
+# The options passed to the shell by GNU make.
+#####
+export SHELLOPTS := errexit
+
+#####
+# These are internal paths. These should not be modified by users of LPmade unless there is some specific reason to change the internal relative directory structure.
+#####
+BIN := ../../netlib/bin
+METRICS := ../../metrics
+GNUPLOT := ../../gnuplot/bin/gnuplot
+WEKA := ../../weka/weka.jar

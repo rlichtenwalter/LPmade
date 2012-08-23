@@ -1,0 +1,84 @@
+.TH snowball_sample 1 "June 20, 2011" "version 1.0" "LPmade User Commands"
+.SH NAME
+snowball_sample \- output the network that results from performing snowball sampling
+.SH SYNOPSIS
+.B snowball_sample
+[OPTIONS] ...
+source
+distance
+.SH DESCRIPTION
+Creates a snowball sample of the network to the given distance from the given vertex using out-edges. Outputs the network that results from the sampling procedure including all vertices reached and any edges that connect two vertices in the sample within the distance limit.
+.SH OPTIONS
+.TP
+.B \-h
+display usage information
+.SH RETURN VALUE
+Returns 0 on successful execution (not necessarily successful completion) or 1 if argument specification is incorrect or the requested predictor is not included in predict. See also snowball_sample_in(1), which differs from this program only in its use of in-edges.
+.SH EXAMPLE
+.PP
+< mynet.net snowball_sample 0 3 > smallnet.net
+.PP
+Input:
+.RS
+*Vertices 9
+0 0
+1 1
+2 2
+3 3
+4 4
+5 5
+6 6
+7 7
+8 8
+*Edges 18
+0 1 1
+0 2 1
+1 2 1
+1 3 1
+1 4 1
+2 5 1
+3 6 1
+4 5 1
+5 2 1
+6 3 1
+6 7 1
+7 1 1
+8 0 1
+8 1 1
+8 2 1
+8 3 1
+8 4 1
+8 5 1
+8 6 1
+8 7 1
+.RE
+.PP
+Output:
+.RS
+*Vertices 9
+0 0
+1 1
+2 2
+3 3
+4 4
+5 5
+6 6
+7 7
+8 8
+*Edges 9
+0 1 1
+0 2 1
+1 2 1
+1 3 1
+1 4 1
+2 5 1
+3 6 1
+4 5 1
+5 2 1
+.RE
+.SH COPYRIGHT
+.PP
+Copyright (C) 2011 Ryan N. Lichtenwalter
+.PP
+LPmade is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. LPmade is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with LPmade. If not, see <http://www.gnu.org/licenses/>.
+

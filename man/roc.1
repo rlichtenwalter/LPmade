@@ -1,0 +1,50 @@
+.TH roc 1 "June 20, 2011" "version 1.0" "LPmade User Commands"
+.SH NAME
+roc \- compute area under the precision-recall curve for a sorted list of score-label pairs
+.SH SYNOPSIS
+.B roc
+[OPTIONS] ...
+num_negative
+num_positive ...
+.SH DESCRIPTION
+A highly optimized calculator for area under the precision-recall curve. This program assumes that its input will come in terms of space-separated score-label pairs sorted so that the highest scores are at the top. It will properly handle all C-style double-precision input.
+.SH OPTIONS
+.TP
+.B \-h
+display usage information
+.SH RETURN VALUE
+Returns 0 on successful execution (not necessarily successful completion) or 1 if argument specification is incorrect or the requested predictor is not included in predict.
+.SH EXAMPLE
+.RS
+all=$(predictions.sprob.gz gunzip | wc -l)
+pos=$(predictions.sprob.gz gunzip | grep -c '1$')
+let neg=all-pos
+< predictions.sprob.gz gunzip | roc $neg $pos
+.RE
+.PP
+Input:
+.RS
+0.9 1
+0.8 0
+0.7 1
+0.6 1
+0.5 0
+0.4 0
+.RE
+.PP
+Output:
+.RS
+0.000000 0.000000
+0.000000 0.333333
+0.333333 0.333333
+0.333333 0.666667
+0.333333 1.000000
+0.666667 1.000000
+1.000000 1.000000
+.RE
+.SH COPYRIGHT
+.PP
+Copyright (C) 2011 Ryan N. Lichtenwalter
+.PP
+LPmade is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. LPmade is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with LPmade. If not, see <http://www.gnu.org/licenses/>.
+

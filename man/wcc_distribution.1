@@ -1,0 +1,27 @@
+.TH wcc_distribution 1 "June 20, 2011" "version 1.0" "LPmade User Commands"
+.SH NAME
+wcc_distribution \- output information about all weakly connected components in the network
+.SH SYNOPSIS
+.B wcc_distribution
+[OPTIONS] ...
+.SH DESCRIPTION
+Produces a distribution of the size of weakly connected components in the network. The result is space-separated output in which the first column is the identifier of a representative vertex of the WCC, the second column is the number of vertices in the WCC, the third column is the number of edges in the WCC, and the fourth column is the approximate diameter of the WCC. To see how diameter is calculated within the WCCs, see pseudo_diameter(1).
+.SH OPTIONS
+.TP
+.B \-h
+display usage information
+.SH RETURN VALUE
+Returns 0 on successful execution (not necessarily successful completion) or 1 if argument specification is incorrect or the requested predictor is not included in predict.
+.SH EXAMPLE
+.PP
+< mynet.net wcc_distribution > wcc_dist.txt
+.PP
+Input:
+.PP
+Output: A space-separated list of WCCs in terms of representative vertex, number of vertices, number of edges, and approximate diameter.
+.SH COPYRIGHT
+.PP
+Copyright (C) 2011 Ryan N. Lichtenwalter
+.PP
+LPmade is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. LPmade is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with LPmade. If not, see <http://www.gnu.org/licenses/>.
+

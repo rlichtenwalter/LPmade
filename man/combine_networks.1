@@ -1,0 +1,64 @@
+.TH combine_networks 1 "June 20, 2011" "version 1.0" "LPmade User Commands"
+.SH NAME
+combine_networks \- combine one or more networks into a single network
+.SH SYNOPSIS
+.B combine_networks
+[OPTIONS] ...
+<network files> ...
+.SH DESCRIPTION
+Accepts as parameters two or more network files and outputs a network that contains all vertices and edges in either network.
+.SH OPTIONS
+.TP
+.B \-h
+display usage information
+.SH RETURN VALUE
+Returns 0 on successful execution (not necessarily successful completion) or 1 if argument specification is incorrect or the requested predictor is not included in predict.
+.SH EXAMPLE
+.PP
+combine_networks mynet1.net mynet2.net
+.PP
+Input:
+.RS
+*Vertices 4
+0 1
+1 2
+2 3
+3 4
+*Edges 3
+0 1 1
+1 2 1
+2 3 1
+--------------------
+*Vertices 4
+0 3
+1 4
+2 5
+3 6
+*Edges 3
+0 1 2
+1 2 1
+2 3 3
+.RE
+.PP
+Output:
+.RS
+*Vertices 6
+0 1
+1 2
+2 3
+3 4
+4 5
+5 6
+*Edges 5
+0 1 1
+1 2 1
+2 3 3
+3 4 1
+4 5 3
+.RE
+.SH COPYRIGHT
+.PP
+Copyright (C) 2011 Ryan N. Lichtenwalter
+.PP
+LPmade is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. LPmade is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with LPmade. If not, see <http://www.gnu.org/licenses/>.
+

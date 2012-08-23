@@ -1,0 +1,56 @@
+.TH remove_edges 1 "June 20, 2011" "version 1.0" "LPmade User Commands"
+.SH NAME
+remove_edges \- output a network with the edges in the parameter removed
+.SH SYNOPSIS
+.B remove_edges
+[OPTIONS] ...
+removal_network ...
+.SH DESCRIPTION
+Outputs a LPmade format network that contains all the edges from the network at standard input that are not present in the network file specified as a parameter.
+.SH OPTIONS
+.TP
+.B \-h
+display usage information
+.SH RETURN VALUE
+Returns 0 on successful execution (not necessarily successful completion) or 1 if argument specification is incorrect or the requested predictor is not included in predict.
+.SH EXAMPLE
+.PP
+< mynet.net remove_edges removal.net > newnet.net
+.PP
+Input:
+.RS
+*Vertices 4
+0 1
+1 2
+2 3
+3 4
+*Edges 3
+0 1 1
+1 2 1
+2 3 1
+--------------------
+*Vertices 4
+0 1
+1 2
+2 3
+3 4
+*Edges 1
+0 1 1
+.PP
+Output:
+.RS
+*Vertices 4
+0 1
+1 2
+2 3
+3 4
+*Edges 2
+1 2 1
+2 3 1
+.RE
+.SH COPYRIGHT
+.PP
+Copyright (C) 2011 Ryan N. Lichtenwalter
+.PP
+LPmade is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. LPmade is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with LPmade. If not, see <http://www.gnu.org/licenses/>.
+

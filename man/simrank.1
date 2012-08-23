@@ -1,0 +1,70 @@
+.TH simrank 1 "June 20, 2011" "version 1.0" "LPmade User Commands"
+.SH NAME
+simrank \- output SimRank scores for all pairs of vertices
+.SH SYNOPSIS
+.B simrank
+[OPTIONS] ...
+C ...
+.SH DESCRIPTION
+Computes the SimRank scores for all pairs of vertices in the network. SimRank computes a similar score between two objects such that two objects are similar if they are related to other objects that are similar. This is only feasible for small networks in this implementation because of O(|V|^2) space requirements. This is the vanilla SimRank implementation as proposed in the original paper by Jeh and Widom. C is a decay factor parameter typically set to 0.8. For more information, see the paper 'SimRank: a measure of structural-context similarity'.
+.SH OPTIONS
+.TP
+.B \-h
+display usage information
+.SH RETURN VALUE
+Returns 0 on successful execution (not necessarily successful completion) or 1 if argument specification is incorrect or the requested predictor is not included in predict.
+.SH EXAMPLE
+.PP
+< mynet.net simrank 0.8
+.PP
+Input:
+.RS
+*Vertices 5
+0 0
+1 1
+2 2
+3 3
+4 4
+*Edges 6
+0 1 1
+0 3 1
+1 2 1
+2 0 1
+3 4 1
+4 3 1
+.RE
+.PP
+Output:
+.RS
+1
+0
+0
+1.280000e-01
+0
+0
+1
+0
+4.000000e-01
+1.024000e-01
+0
+0
+1
+4.096000e-02
+3.200000e-01
+1.280000e-01
+4.000000e-01
+4.096000e-02
+1
+7.168000e-02
+0
+1.024000e-01
+3.200000e-01
+7.168000e-02
+1
+.RE
+.SH COPYRIGHT
+.PP
+Copyright (C) 2011 Ryan N. Lichtenwalter
+.PP
+LPmade is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. LPmade is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with LPmade. If not, see <http://www.gnu.org/licenses/>.
+

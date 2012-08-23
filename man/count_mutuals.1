@@ -1,0 +1,40 @@
+.TH count_mutuals 1 "June 20, 2011" "version 1.0" "LPmade User Commands"
+.SH NAME
+count_mutuals \- print the number of bidirectional edges in the network
+.SH SYNOPSIS
+.B count_mutuals
+[OPTIONS] ...
+.SH DESCRIPTION
+Outputs the number of bidirectional edges in the network.
+.SH OPTIONS
+.TP
+.B \-h
+display usage information
+.SH RETURN VALUE
+Returns 0 on successful execution (not necessarily successful completion) or 1 if argument specification is incorrect or the requested predictor is not included in predict.
+.SH EXAMPLE
+.PP
+< mynet.net count_mutuals
+.PP
+Input:
+.RS
+*Vertices 3
+0 1
+1 2
+2 3
+*Edges 3
+0 1 1
+1 2 1
+2 1 1
+.RE
+.PP
+Output:
+.RS
+1
+.RE
+.SH COPYRIGHT
+.PP
+Copyright (C) 2011 Ryan N. Lichtenwalter
+.PP
+LPmade is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. LPmade is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with LPmade. If not, see <http://www.gnu.org/licenses/>.
+

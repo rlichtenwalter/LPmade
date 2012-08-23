@@ -1,0 +1,77 @@
+.TH betweenness 1 "June 20, 2011" "version 1.0" "LPmade User Commands"
+.SH NAME
+betweenness \- print betweenness centralities for all nodes in the network
+.SH SYNOPSIS
+.B betweenness
+[OPTIONS] ...
+.SH DESCRIPTION
+Computes betweenness centralities in O(|V||E|) time for all vertices in the network using Brandes' algorithm. This implementation ignores edge weights. The network is expected at standard input.
+.SH OPTIONS
+.TP
+.B \-h
+display usage information
+.SH RETURN VALUE
+Returns 0 on successful execution (not necessarily successful completion) or 1 if argument specification is incorrect or the requested predictor is not included in predict.
+.SH EXAMPLE
+.PP
+< mynet.net betweenness
+.PP
+Input:
+.RS
+*Vertices 10
+0 0
+1 1
+2 2
+3 3
+4 4
+5 5
+6 6
+7 7
+8 8
+9 9
+*Edges 24
+0 1 1
+1 0 1
+1 2 1
+1 3 1
+2 1 1
+2 4 1
+3 1 1
+3 5 1
+4 2 1
+4 6 1
+4 7 1
+4 8 1
+5 3 1
+5 8 1
+6 4 1
+6 9 1
+7 4 1
+7 9 1
+8 4 1
+8 5 1
+8 9 1
+9 6 1
+9 7 1
+9 8 1
+.RE
+.PP
+Output:
+.RS
+0.000000e+00
+2.133333e+01
+1.933333e+01
+8.000000e+00
+2.966667e+01
+1.066667e+01
+2.333333e+00
+2.333333e+00
+1.800000e+01
+6.333333e+00
+.RE
+.SH COPYRIGHT
+.PP
+Copyright (C) 2011 Ryan N. Lichtenwalter
+.PP
+LPmade is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. LPmade is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with LPmade. If not, see <http://www.gnu.org/licenses/>.
+

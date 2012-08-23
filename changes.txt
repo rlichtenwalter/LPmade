@@ -1,0 +1,24 @@
+v1.2.2
+- Fixed issue with auroc on 32-bit architectures that caused integer
+  wraparounds that produced incorrect results.
+
+v1.2.1
+- Fixed issue related to Ubuntu g++ header inclusion.
+- Fixed issue related to the specific command "predict -n 0 -d I" that would
+  cause existing edges to receive predictions.
+
+v1.2.0
+- Changed Makefile.paths to Makefile.options.
+- Preliminary support for vertex collocation profile (VCP) make target (make vcp).
+- Generalization of WEKA classification support from the classify target to any target requiring classification (such as vcp).
+- Changed BAGS user variable in Makefile.common to NUM_BAGS.
+- Changed default EVALUATION_METRICS value to "roc auroc aupr".
+- Enforced use of bash by GNU make by setting shell variable.
+- Added SHELLOPTS export in Makefile.options and added errexit option.
+
+v1.1.2
+- Added this change log.
+- Changed link predictor score output from 6 to 15 points of precision. Need to modify label_predictions binary to do the same.
+- Link predictor score output precision is specified as a maximum precision rather than a required precision.
+- Increased the speed of the Katz predictor.
+- Preliminarily added vertex collocation profile (VCP) predictors to LPmade. Currently, these predictors output their vectors to standard error and -1 to standard output. Need to better incorporate VCPs, include them in build system, and include documentation.

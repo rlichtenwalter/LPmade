@@ -1,0 +1,56 @@
+.TH path_pairs 1 "June 20, 2011" "version 1.0" "LPmade User Commands"
+.SH NAME
+path_pairs \- find all vertex pairs with reachability dictated by a sequence of directional steps
+.SH SYNOPSIS
+.B path_pairs
+[OPTIONS] ...
+path_steps ...
+.SH DESCRIPTION
+Accepts as a parameter a sequence of directions defined by the regular expression '(O|I|o|i)+' excluding the quotes. Lowercase 'o' and uppercase 'O' both stand for out-edges and lowercase 'i' and uppercase 'I' both stand for in-edges. Given a network at standard input, the program will produce all the pairs of vertices such that a target vertex is reachable from the source vertex by following the specified sequence of in-edges or out-edges. The sequence should not be specified with spaces, but should instead be specified as a single string argument at the command line.
+.SH OPTIONS
+.TP
+.B \-h
+display usage information
+.SH RETURN VALUE
+Returns 0 on successful execution (not necessarily successful completion) or 1 if argument specification is incorrect or the requested predictor is not included in predict.
+.SH EXAMPLE
+.PP
+< mynet.net path_pairs OIO
+.PP
+Input:
+.RS
+*Vertices 12
+0 0
+1 1
+2 2
+3 3
+4 4
+5 5
+6 6
+7 7
+8 8
+9 9
+10 10
+11 11
+*Edges 9
+0 1 1
+1 2 1
+2 3 1
+4 5 1
+6 5 1
+6 7 1
+9 8 1
+10 9 1
+10 11 1
+.RE
+.PP
+Output:
+.RS
+4 7
+.RE
+.SH COPYRIGHT
+.PP
+Copyright (C) 2011 Ryan N. Lichtenwalter
+.PP
+LPmade is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. LPmade is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with LPmade. If not, see <http://www.gnu.org/licenses/>.
+

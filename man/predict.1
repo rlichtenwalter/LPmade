@@ -1,0 +1,103 @@
+.TH predict 1 "June 20, 2011" "version 1.0" "LPmade User Commands"
+.SH NAME
+predict \- predict links using unsupervised link prediction algorithms
+.SH SYNOPSIS
+.B predict
+[OPTIONS] ...
+predictor ...
+[PREDICTOR OPTIONS]
+.SH DESCRIPTION
+The predict binary provides access to all unsupervised link prediction methods implemented within LPmade. When input is provided at standard input it should be specified as space-separated vertex identifier pairs. Output is provided as a space-separated triple of vertex pairs with an associated score. Also see label_predictions(1), which describes the program to attach labels to the output of this program given a second network. Currently, the following unsupervised score generators are available:
+.TP
+AdamicAdar
+The Adamic/Adar link prediction method. This predictor is an inverse frequency measure of common neighbors. The contribution of a common neighbor to the score is weighted in proportion to the rarity of the neighbor. This predictor accepts no additional arguments.
+.TP
+CommonNeighbor
+The common neighbors link prediction method. This predictor is the simple count of common neighbors. In directed networks, a common neighbor exists if there is a neighbor relationship between the source and target and the neighbor in terms of the direction specified by the -d option to predict. This means common neighbors may exist even if the source and target are more than two hops away with respect to paths along the directed edges. This predictor accepts no additional arguments.
+.TP
+ClusteringCoefficient
+The clustering coefficient of the source. For purposes of consistency with the rest of the library, this should be called IClusteringCoefficient, and this change may occur in future releases. This predictor accepts no additional arguments.
+.TP
+Distance
+The geodesic distance between the source and the target. This predictor is only useful in scenarios when the -c flag is provided to predict or when -n 0 is used. This predictor accepts no additional arguments.
+.TP
+IDegree
+The degree of the source. The -d option to predict determines whether to use in-degree or out-degree. This predictor accepts no additional arguments.
+.TP
+JDegree
+The degree of the target. The -d option to predict determines whether to use in-degree or out-degree. This predictor accepts no additional arguments.
+.TP
+IPageRank [PREDICTOR OPTIONS]
+The PageRank score of the source. The -d option to predict determines whether to use in-degree or out-degree. This predictor requires one argument: the PageRank d walk restart probability.
+.TP
+JPageRank [PREDICTOR OPTIONS]
+The PageRank score of the target. The -d option to predict determines whether to use in-degree or out-degree. This predictor requires one argument: the PageRank d walk restart probability.
+.TP
+IVolume
+The total sum of the weights in or out of the source. Equivalent to IDegree in unweighted networks. The -d option to predict determines whether to use in-degree or out-degree. This predictor accepts no additional arguments.
+.TP
+JVolume
+The total sum of the weights in or out of the target. Equivalent to JDegree in unweighted networks. The -d option to predict determines whether to use in-degree or out-degree. This predictor accepts no additional arguments.
+.TP
+JaccardCoefficient
+The Jaccard coefficient link prediction method. This predictor produces a score corresponding to the quotient of the intersection of the two neighbor sets and the union of the two neighbors sets. This predictor accepts no additional arguments.
+.TP
+Katz [PREDICTOR OPTIONS]
+The Katz link prediction method. Because this score is computed by performing traversals on the graph rather than matrix operations, and because the networks of interest are typically large, this predictor accepts as its first parameter a maximum distance away from the source. Its second parameter is the damping parameter beta.
+.TP
+Mutuality
+This predictor outputs 1 if the edge exists in the other direction or 0 otherwise. It is meaningless in undirected networks. This predictor accepts no additional arguments.
+.TP
+One
+This predictor always outputs 1. This predictor is not useful for actually generating predictions, but it may be used as a null model or as a way to quickly generate the set of pairs for a given value of the parameter -n. This predictor accepts no additional arguments.
+.TP
+PreferentialAttachment
+Preferential attachment link prediction method. As implemented in this library, it is the product of the out-degree of the source and the in-degree of the target. Setting -d I will invert this. This predictor accepts no additional arguments.
+.TP
+PropFlow [PREDICTOR OPTIONS]
+The PropFlow link prediction method. This should serve as the reference implementation of PropFow. This predictor accepts a maximum distance to explore the network in the underlying breadth first search before terminating. The predictor accepts a single parameter: the maximum depth of the breadth-first search (0 for full search).
+.TP
+RootedPageRank [PREDICTOR OPTIONS]
+Rooted PageRank link prediction method. This predictor accepts the random walk restart parameter alpha (0,1).
+.TP
+ShortestPathCount [PREDICTOR OPTIONS]
+This predictor outputs the number of shortest paths from the source to the target. It executes a breadth first search terminating at the level at which the target is found and counts the number of times the target is encountered at that level. This predictor accepts a maximum distance to explore the network in the underlying breadth first search before terminating.
+.TP
+SimRank [PREDICTOR OPTIONS]
+The SimRank link prediction method. Because the method requires O(|V|^2) space, it is feasible only for small networks. It accepts the C parameter from the original publication.
+.TP
+WeightedRootedPageRank [PREDICTOR OPTIONS]
+The same as rooted PageRank except that it uses edge weights if they exist to inform the transition probability from one vertex to another. This predictor accepts the random walk restart parameter alpha (0,1).
+.SH OPTIONS
+.TP
+.B \-h
+display usage information
+.TP
+.BR \-d " direction"
+The direction of edges to use; must be in {I,O} (default is O).
+.TP
+.BI \-f " network"
+File containing the network in which to predict.
+.TP
+.BI \-n " distance"
+Distance of neighborhood in which to predict (default is 2). Should not be used with -c.
+.TP
+.B \-c
+Specifies that node pairs for prediction are available at standard input. Should not be used with -n.
+.SH RETURN VALUE
+Returns 0 on successful execution (not necessarily successful completion) or 1 if argument specification is incorrect or the requested predictor is not included in predict.
+.SH EXAMPLE
+.PP
+< mypairs.txt predict -c -f mynet.net -d O AdamicAdar > myout.pred
+.PP
+predict -f mynet.net -d I -n 2 PropFlow 5 > myout.pred
+.PP
+Input (with -c option): 2 3
+.PP
+Output: 2 3 4.57
+.SH COPYRIGHT
+.PP
+Copyright (C) 2011 Ryan N. Lichtenwalter
+.PP
+LPmade is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. LPmade is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with LPmade. If not, see <http://www.gnu.org/licenses/>.
+

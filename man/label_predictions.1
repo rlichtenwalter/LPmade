@@ -1,0 +1,50 @@
+.TH label_predictions 1 "June 20, 2011" "version 1.0" "LPmade User Commands"
+.SH NAME
+label_predictions \- label prediction output from the predict binary
+.SH SYNOPSIS
+.B label_predictions
+[OPTIONS] ...
+label_network ...
+.SH DESCRIPTION
+Accepts prediction scores from the predict program and attaches the label information by stripping vertex identifiers and appending labels from another network. Labels are positive (1) if the scored edge exists in the label network and negative (0) otherwise. See also predict(1) for information about generating predictions.
+.SH OPTIONS
+.TP
+.B \-h
+display usage information
+.SH RETURN VALUE
+Returns 0 on successful execution (not necessarily successful completion) or 1 if argument specification is incorrect or the requested predictor is not included in predict.
+.SH EXAMPLE
+.PP
+< predictions.pred label_predictions label.net
+.PP
+predict -n 2 -f prediction.net -d O AdamicAdar | label_predictions label.net
+.PP
+Input:
+.RS
+8 10 0.6
+3 5 0.2
+4 7 0.7
+--------------------
+*Vertices 5
+0 3
+1 4
+2 5
+3 7
+4 9
+*Edges 2
+0 2 1
+0 3 1
+.RE
+.PP
+Output:
+.RS
+6.000000e-01 0
+2.000000e-01 1
+7.000000e-01 0
+.RE
+.SH COPYRIGHT
+.PP
+Copyright (C) 2011 Ryan N. Lichtenwalter
+.PP
+LPmade is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. LPmade is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with LPmade. If not, see <http://www.gnu.org/licenses/>.
+
