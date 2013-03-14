@@ -9,29 +9,32 @@
 CONFIG := BIN
 ifeq ($(CONFIG),DEBUG) 
 	CFLAGS := -Wall -Werror -g
-	BINDIR := ./debug
+	BINDIR := debug
 endif
 ifeq ($(CONFIG),BIN)
 	CFLAGS := -Wall -Werror -O3 -D NDEBUG
-	BINDIR := ./bin
+	BINDIR := bin
 endif
 CC := g++
 NETWORK_BINS := $(patsubst %.cpp,%,$(notdir $(wildcard ./mains/*.cpp)))
 
 all: network predictors
-	cp ./LinkPredictor/bin/* $(BINDIR);
+	cp ./LinkPredictor/$(BINDIR)/* $(BINDIR);
 
 network: $(addprefix $(BINDIR)/,$(NETWORK_BINS))
-predictors: ./LinkPredictor/bin/predict
+predictors: ./LinkPredictor/$(BINDIR)/predict
 test: $(patsubst %,./test/%.TEST,$(NETWORK_BINS) $(PREDICTOR_BINS))
 
 $(BINDIR)/%: ./mains/%.o WeightedNetwork.o Statistics.o
+	@mkdir -p $(@D);
 	$(CC) $(CFLAGS) $^ -o $@;
 
-./LinkPredictor/bin/predict: ./LinkPredictor/mains/predict.o $(patsubst %.cpp,%.o,$(wildcard ./LinkPredictor/*.cpp)) WeightedNetwork.o
+./LinkPredictor/$(BINDIR)/predict: ./LinkPredictor/mains/predict.o $(patsubst %.cpp,%.o,$(wildcard ./LinkPredictor/*.cpp)) WeightedNetwork.o
+	@mkdir -p $(@D);
 	$(CC) $(CFLAGS) $^ -o $@;
 
-./Model/bin/%: ./Model/mains/%.o ./Model/%Model.o WeightedNetwork.o
+./Model/$(BINDIR)/%: ./Model/mains/%.o ./Model/%Model.o WeightedNetwork.o
+	@mkdir -p $(@D);
 	$(CC) $(CFLAGS) $^ -o $@;
 
 %.o: %.cpp
@@ -48,4 +51,4 @@ $(BINDIR)/%: ./mains/%.o WeightedNetwork.o Statistics.o
 .PHONY: clean all test network predictors
 
 clean:
-	-rm -f *.o mains/*.o LinkPredictor/mains/*.o $(BINDIR)/* LinkPredictor/bin/* LinkPredictor/*.o ./test/*.OUTPUT
+	-rm -rf *.o mains/*.o LinkPredictor/mains/*.o $(BINDIR) LinkPredictor/$(BINDIR) LinkPredictor/*.o ./test/*.OUTPUT
