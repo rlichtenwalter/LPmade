@@ -12,7 +12,7 @@ LPmade is free software: you can redistribute it and/or modify it under the term
 #include <ctype.h>
 #include <stdio.h>
 #include <cstring>
-
+#include <unistd.h>
 #include "../WeightedNetwork.h"
 
 using std::cin;
